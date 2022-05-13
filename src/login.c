@@ -21,6 +21,8 @@
 #include <utmp.h>
 #include <xcb/xcb.h>
 
+#include <fcntl.h>
+
 int get_free_display()
 {
 	char xlock[1024];
@@ -39,7 +41,7 @@ int get_free_display()
 	return i;
 }
 
-void reset_terminal(struct passwd* pwd)
+void reset_terminal(struct passwd *pwd)
 {
 	pid_t pid = fork();
 
@@ -55,19 +57,19 @@ void reset_terminal(struct passwd* pwd)
 
 int login_conv(
 	int num_msg,
-	const struct pam_message** msg,
-	struct pam_response** resp,
-	void* appdata_ptr)
+	const struct pam_message **msg,
+	struct pam_response **resp,
+	void *appdata_ptr)
 {
-	*resp = calloc(num_msg, sizeof (struct pam_response));
+	*resp = calloc(num_msg, sizeof(struct pam_response));
 
 	if (*resp == NULL)
 	{
 		return PAM_BUF_ERR;
 	}
 
-	char* username;
-	char* password;
+	char *username;
+	char *password;
 	int ok = PAM_SUCCESS;
 	int i;
 
@@ -75,23 +77,23 @@ int login_conv(
 	{
 		switch (msg[i]->msg_style)
 		{
-			case PAM_PROMPT_ECHO_ON:
-			{
-				username = ((char**) appdata_ptr)[0];
-				(*resp)[i].resp = strdup(username);
-				break;
-			}
-			case PAM_PROMPT_ECHO_OFF:
-			{
-				password = ((char**) appdata_ptr)[1];
-				(*resp)[i].resp = strdup(password);
-				break;
-			}
-			case PAM_ERROR_MSG:
-			{
-				ok = PAM_CONV_ERR;
-				break;
-			}
+		case PAM_PROMPT_ECHO_ON:
+		{
+			username = ((char **)appdata_ptr)[0];
+			(*resp)[i].resp = strdup(username);
+			break;
+		}
+		case PAM_PROMPT_ECHO_OFF:
+		{
+			password = ((char **)appdata_ptr)[1];
+			(*resp)[i].resp = strdup(password);
+			break;
+		}
+		case PAM_ERROR_MSG:
+		{
+			ok = PAM_CONV_ERR;
+			break;
+		}
 		}
 
 		if (ok != PAM_SUCCESS)
@@ -120,96 +122,96 @@ int login_conv(
 	return ok;
 }
 
-void pam_diagnose(int error, struct term_buf* buf)
+void pam_diagnose(int error, struct term_buf *buf)
 {
 	switch (error)
 	{
-		case PAM_ACCT_EXPIRED:
-		{
-			buf->info_line = lang.err_pam_acct_expired;
-			break;
-		}
-		case PAM_AUTH_ERR:
-		{
-			buf->info_line = lang.err_pam_auth;
-			break;
-		}
-		case PAM_AUTHINFO_UNAVAIL:
-		{
-			buf->info_line = lang.err_pam_authinfo_unavail;
-			break;
-		}
-		case PAM_BUF_ERR:
-		{
-			buf->info_line = lang.err_pam_buf;
-			break;
-		}
-		case PAM_CRED_ERR:
-		{
-			buf->info_line = lang.err_pam_cred_err;
-			break;
-		}
-		case PAM_CRED_EXPIRED:
-		{
-			buf->info_line = lang.err_pam_cred_expired;
-			break;
-		}
-		case PAM_CRED_INSUFFICIENT:
-		{
-			buf->info_line = lang.err_pam_cred_insufficient;
-			break;
-		}
-		case PAM_CRED_UNAVAIL:
-		{
-			buf->info_line = lang.err_pam_cred_unavail;
-			break;
-		}
-		case PAM_MAXTRIES:
-		{
-			buf->info_line = lang.err_pam_maxtries;
-			break;
-		}
-		case PAM_NEW_AUTHTOK_REQD:
-		{
-			buf->info_line = lang.err_pam_authok_reqd;
-			break;
-		}
-		case PAM_PERM_DENIED:
-		{
-			buf->info_line = lang.err_pam_perm_denied;
-			break;
-		}
-		case PAM_SESSION_ERR:
-		{
-			buf->info_line = lang.err_pam_session;
-			break;
-		}
-		case PAM_SYSTEM_ERR:
-		{
-			buf->info_line = lang.err_pam_sys;
-			break;
-		}
-		case PAM_USER_UNKNOWN:
-		{
-			buf->info_line = lang.err_pam_user_unknown;
-			break;
-		}
-		case PAM_ABORT:
-		default:
-		{
-			buf->info_line = lang.err_pam_abort;
-			break;
-		}
+	case PAM_ACCT_EXPIRED:
+	{
+		buf->info_line = lang.err_pam_acct_expired;
+		break;
+	}
+	case PAM_AUTH_ERR:
+	{
+		buf->info_line = lang.err_pam_auth;
+		break;
+	}
+	case PAM_AUTHINFO_UNAVAIL:
+	{
+		buf->info_line = lang.err_pam_authinfo_unavail;
+		break;
+	}
+	case PAM_BUF_ERR:
+	{
+		buf->info_line = lang.err_pam_buf;
+		break;
+	}
+	case PAM_CRED_ERR:
+	{
+		buf->info_line = lang.err_pam_cred_err;
+		break;
+	}
+	case PAM_CRED_EXPIRED:
+	{
+		buf->info_line = lang.err_pam_cred_expired;
+		break;
+	}
+	case PAM_CRED_INSUFFICIENT:
+	{
+		buf->info_line = lang.err_pam_cred_insufficient;
+		break;
+	}
+	case PAM_CRED_UNAVAIL:
+	{
+		buf->info_line = lang.err_pam_cred_unavail;
+		break;
+	}
+	case PAM_MAXTRIES:
+	{
+		buf->info_line = lang.err_pam_maxtries;
+		break;
+	}
+	case PAM_NEW_AUTHTOK_REQD:
+	{
+		buf->info_line = lang.err_pam_authok_reqd;
+		break;
+	}
+	case PAM_PERM_DENIED:
+	{
+		buf->info_line = lang.err_pam_perm_denied;
+		break;
+	}
+	case PAM_SESSION_ERR:
+	{
+		buf->info_line = lang.err_pam_session;
+		break;
+	}
+	case PAM_SYSTEM_ERR:
+	{
+		buf->info_line = lang.err_pam_sys;
+		break;
+	}
+	case PAM_USER_UNKNOWN:
+	{
+		buf->info_line = lang.err_pam_user_unknown;
+		break;
+	}
+	case PAM_ABORT:
+	default:
+	{
+		buf->info_line = lang.err_pam_abort;
+		break;
+	}
 	}
 
 	dgn_throw(DGN_PAM);
 }
 
-void env_init(struct passwd* pwd)
+void env_init(struct passwd *pwd)
 {
-	extern char** environ;
-	char* term = getenv("TERM");
-	char* lang = getenv("LANG");
+	extern char **environ;
+	char *term = getenv("TERM");
+	char *lang = getenv("LANG");
 	// clean env
 	environ[0] = NULL;
 
@@ -241,7 +243,7 @@ void env_init(struct passwd* pwd)
 	}
 }
 
-void env_xdg(const char* tty_id, const enum display_server display_server)
+void env_xdg(const char *tty_id, const enum display_server display_server)
 {
 	char user[15];
 	snprintf(user, 15, "/run/user/%d", getuid());
@@ -252,30 +254,30 @@ void env_xdg(const char* tty_id, const enum display_server display_server)
 
 	switch (display_server)
 	{
-		case DS_WAYLAND:
-		{
-			setenv("XDG_SESSION_TYPE", "wayland", 1);
-			break;
-		}
-		case DS_SHELL:
-		{
-			setenv("XDG_SESSION_TYPE", "tty", 0);
-			break;
-		}
-		case DS_XINITRC:
-		case DS_XORG:
-		{
-			setenv("XDG_SESSION_TYPE", "x11", 0);
-			break;
-		}
+	case DS_WAYLAND:
+	{
+		setenv("XDG_SESSION_TYPE", "wayland", 1);
+		break;
+	}
+	case DS_SHELL:
+	{
+		setenv("XDG_SESSION_TYPE", "tty", 0);
+		break;
+	}
+	case DS_XINITRC:
+	case DS_XORG:
+	{
+		setenv("XDG_SESSION_TYPE", "x11", 0);
+		break;
+	}
 	}
 }
 
 void add_utmp_entry(
 	struct utmp *entry,
 	char *username,
-	pid_t display_pid
-) {
+	pid_t display_pid)
+{
 	entry->ut_type = USER_PROCESS;
 	entry->ut_pid = display_pid;
 	strcpy(entry->ut_line, ttyname(STDIN_FILENO) + strlen("/dev/"));
@@ -283,7 +285,7 @@ void add_utmp_entry(
 	/* only correct for ptys named /dev/tty[pqr][0-9a-z] */
 	strcpy(entry->ut_id, ttyname(STDIN_FILENO) + strlen("/dev/tty"));
 
-	time((long int *) &entry->ut_time);
+	time((long int *)&entry->ut_time);
 
 	strncpy(entry->ut_user, username, UT_NAMESIZE);
 	memset(entry->ut_host, 0, UT_HOSTSIZE);
@@ -293,7 +295,8 @@ void add_utmp_entry(
 	pututline(entry);
 }
 
-void remove_utmp_entry(struct utmp *entry) {
+void remove_utmp_entry(struct utmp *entry)
+{
 	entry->ut_type = DEAD_PROCESS;
 	memset(entry->ut_line, 0, UT_LINESIZE);
 	entry->ut_time = 0;
@@ -303,14 +306,14 @@ void remove_utmp_entry(struct utmp *entry) {
 	endutent();
 }
 
-void xauth(const char* display_name, const char* shell, const char* dir)
+void xauth(const char *display_name, const char *shell, const char *dir)
 {
 	char xauthority[256];
 	snprintf(xauthority, 256, "%s/%s", dir, ".lyxauth");
 	setenv("XAUTHORITY", xauthority, 1);
 	setenv("DISPLAY", display_name, 1);
 
-	FILE* fp = fopen(xauthority, "ab+");
+	FILE *fp = fopen(xauthority, "ab+");
 
 	if (fp != NULL)
 	{
@@ -338,12 +341,12 @@ void xauth(const char* display_name, const char* shell, const char* dir)
 }
 
 void xorg(
-	struct passwd* pwd,
-	const char* vt,
-	const char* desktop_cmd)
+	struct passwd *pwd,
+	const char *vt,
+	const char *desktop_cmd)
 {
 	// generate xauthority file
-	const char* xauth_dir = getenv("XDG_CONFIG_HOME");
+	const char *xauth_dir = getenv("XDG_CONFIG_HOME");
 
 	if ((xauth_dir == NULL) || (*xauth_dir == '\0'))
 	{
@@ -354,6 +357,13 @@ void xorg(
 
 	snprintf(display_name, 3, ":%d", get_free_display());
 	xauth(display_name, pwd->pw_shell, xauth_dir);
+
+	// hide cursor and output
+	printf("\x1b[?25l\n");
+	int fd = open("/dev/null", O_WRONLY);
+	dup2(fd, 1); /* make stdout a copy of fd (> /dev/null) */
+	dup2(fd, 2); /* ...and same with stderr */
+	close(fd);	 /* close fd */
 
 	// start xorg
 	pid_t pid = fork();
@@ -373,15 +383,14 @@ void xorg(
 	}
 
 	int ok;
-	xcb_connection_t* xcb;
+	xcb_connection_t *xcb;
 
 	do
 	{
 		xcb = xcb_connect(NULL, NULL);
 		ok = xcb_connection_has_error(xcb);
 		kill(pid, 0);
-	}
-	while((ok != 0) && (errno != ESRCH));
+	} while ((ok != 0) && (errno != ESRCH));
 
 	if (ok != 0)
 	{
@@ -416,8 +425,8 @@ void xorg(
 }
 
 void wayland(
-	struct passwd* pwd,
-	const char* desktop_cmd)
+	struct passwd *pwd,
+	const char *desktop_cmd)
 {
 
 	char cmd[1024];
@@ -425,9 +434,9 @@ void wayland(
 	execl(pwd->pw_shell, pwd->pw_shell, "-c", cmd, NULL);
 }
 
-void shell(struct passwd* pwd)
+void shell(struct passwd *pwd)
 {
-	const char* pos = strrchr(pwd->pw_shell, '/');
+	const char *pos = strrchr(pwd->pw_shell, '/');
 	char args[1024];
 	args[0] = '-';
 
@@ -447,14 +456,15 @@ void shell(struct passwd* pwd)
 // pam_do performs the pam action specified in pam_action
 // on pam_action fail, call diagnose and end pam session
 int pam_do(
-	int (pam_action)(struct pam_handle *, int),
+	int(pam_action)(struct pam_handle *, int),
 	struct pam_handle *handle,
 	int flags,
 	struct term_buf *buf)
 {
 	int status = pam_action(handle, flags);
 
-	if (status != PAM_SUCCESS) {
+	if (status != PAM_SUCCESS)
+	{
 		pam_diagnose(status, buf);
 		pam_end(handle, status);
 	}
@@ -463,17 +473,17 @@ int pam_do(
 }
 
 void auth(
-	struct desktop* desktop,
-	struct text* login,
-	struct text* password,
-	struct term_buf* buf)
+	struct desktop *desktop,
+	struct text *login,
+	struct text *password,
+	struct term_buf *buf)
 {
 	int ok;
 
 	// open pam session
-	const char* creds[2] = {login->text, password->text};
+	const char *creds[2] = {login->text, password->text};
 	struct pam_conv conv = {login_conv, creds};
-	struct pam_handle* handle;
+	struct pam_handle *handle;
 
 	ok = pam_start(config.service_name, NULL, &conv, &handle);
 
@@ -514,9 +524,10 @@ void auth(
 
 	// clear the credentials
 	input_text_clear(password);
+	tb_set_cursor(password->x + (password->cur - password->visible_start), password->y);
 
 	// get passwd structure
-	struct passwd* pwd = getpwnam(login->text);
+	struct passwd *pwd = getpwnam(login->text);
 	endpwent();
 
 	if (pwd == NULL)
@@ -530,8 +541,8 @@ void auth(
 	if (pwd->pw_shell[0] == '\0')
 	{
 		setusershell();
-		
-		char* shell = getusershell();
+
+		char *shell = getusershell();
 
 		if (shell != NULL)
 		{
@@ -546,12 +557,14 @@ void auth(
 	tb_present();
 	tb_shutdown();
 
+	printf("\x1b[?25l\n"); // hide cursor early
+
 	// start desktop environment
 	pid_t pid = fork();
 
 	if (pid == 0)
 	{
-		// set user info 
+		// set user info
 		ok = initgroups(pwd->pw_name, pwd->pw_gid);
 
 		if (ok != 0)
@@ -577,7 +590,7 @@ void auth(
 		}
 
 		// get a display
-		char tty_id [3];
+		char tty_id[3];
 		char vt[5];
 
 		snprintf(tty_id, 3, "%d", config.tty);
@@ -592,7 +605,7 @@ void auth(
 		}
 
 		// add pam variables
-		char** env = pam_getenvlist(handle);
+		char **env = pam_getenvlist(handle);
 
 		for (u16 i = 0; env && env[i]; ++i)
 		{
@@ -614,22 +627,22 @@ void auth(
 		reset_terminal(pwd);
 		switch (desktop->display_server[desktop->cur])
 		{
-			case DS_WAYLAND:
-			{
-				wayland(pwd, desktop->cmd[desktop->cur]);
-				break;
-			}
-			case DS_SHELL:
-			{
-				shell(pwd);
-				break;
-			}
-			case DS_XINITRC:
-			case DS_XORG:
-			{
-				xorg(pwd, vt, desktop->cmd[desktop->cur]);
-				break;
-			}
+		case DS_WAYLAND:
+		{
+			wayland(pwd, desktop->cmd[desktop->cur]);
+			break;
+		}
+		case DS_SHELL:
+		{
+			shell(pwd);
+			break;
+		}
+		case DS_XINITRC:
+		case DS_XORG:
+		{
+			xorg(pwd, vt, desktop->cmd[desktop->cur]);
+			break;
+		}
 		}
 
 		exit(EXIT_SUCCESS);
@@ -657,24 +670,23 @@ void auth(
 
 	// close pam session
 	ok = pam_do(pam_close_session, handle, 0, buf);
-	
+
 	if (ok != PAM_SUCCESS)
 	{
 		return;
 	}
 
 	ok = pam_do(pam_setcred, handle, PAM_DELETE_CRED, buf);
-	
+
 	if (ok != PAM_SUCCESS)
 	{
 		return;
 	}
 
 	ok = pam_end(handle, 0);
-	
+
 	if (ok != PAM_SUCCESS)
 	{
 		pam_diagnose(ok, buf);
 	}
 }
-

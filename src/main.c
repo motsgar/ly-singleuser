@@ -25,12 +25,12 @@ struct lang lang;
 struct config config;
 
 // args handles
-void arg_help(void* data, char** pars, const int pars_count)
+void arg_help(void *data, char **pars, const int pars_count)
 {
 	printf("RTFM\n");
 }
 
-void arg_version(void* data, char** pars, const int pars_count)
+void arg_version(void *data, char **pars, const int pars_count)
 {
 #ifdef GIT_VERSION_STRING
 	printf("Ly version %s\n", GIT_VERSION_STRING);
@@ -40,7 +40,7 @@ void arg_version(void* data, char** pars, const int pars_count)
 }
 
 // low-level error messages
-void log_init(char** log)
+void log_init(char **log)
 {
 	log[DGN_OK] = lang.err_dgn_oob;
 	log[DGN_NULL] = lang.err_null;
@@ -60,13 +60,13 @@ void log_init(char** log)
 	log[DGN_HOSTNAME] = lang.err_hostname;
 }
 
-void arg_config(void* data, char** pars, const int pars_count)
+void arg_config(void *data, char **pars, const int pars_count)
 {
 	*((char **)data) = *pars;
 }
 
 // ly!
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
 	// init error lib
 	log_init(dgn_init());
@@ -78,15 +78,15 @@ int main(int argc, char** argv)
 	char *config_path = NULL;
 	// parse args
 	const struct argoat_sprig sprigs[ARG_COUNT] =
-	{
-		{NULL, 0, NULL, NULL},
-		{"config", 0, &config_path, arg_config},
-		{"c", 0, &config_path, arg_config},
-		{"help", 0, NULL, arg_help},
-		{"h", 0, NULL, arg_help},
-		{"version", 0, NULL, arg_version},
-		{"v", 0, NULL, arg_version},
-	};
+		{
+			{NULL, 0, NULL, NULL},
+			{"config", 0, &config_path, arg_config},
+			{"c", 0, &config_path, arg_config},
+			{"help", 0, NULL, arg_help},
+			{"h", 0, NULL, arg_help},
+			{"version", 0, NULL, arg_version},
+			{"v", 0, NULL, arg_version},
+		};
 
 	struct argoat args = {sprigs, ARG_COUNT, NULL, 0, 0};
 	argoat_graze(&args, argc, argv);
@@ -98,6 +98,11 @@ int main(int argc, char** argv)
 	input_desktop(&desktop);
 	input_text(&login, config.max_login_len);
 	input_text(&password, config.max_password_len);
+
+	int usernameLenght = strlen("username") + 1;
+	strncpy(login.text, "username", config.max_login_len);
+	login.end = login.text + usernameLenght - 1;
+	login.text[usernameLenght - 1] = '\0';
 
 	if (dgn_catch())
 	{
@@ -113,22 +118,18 @@ int main(int argc, char** argv)
 		lang_load();
 	}
 
-	void* input_structs[3] =
-	{
-		(void*) &desktop,
-		(void*) &login,
-		(void*) &password,
-	};
+	void *input_structs[1] =
+		{
+			(void *)&password,
+		};
 
-	void (*input_handles[3]) (void*, struct tb_event*) =
-	{
-		handle_desktop,
-		handle_text,
-		handle_text,
-	};
+	void (*input_handles[1])(void *, struct tb_event *) =
+		{
+			handle_text,
+		};
 
 	desktop_load(&desktop);
-	load(&desktop, &login);
+	// load(&desktop, &login);
 
 	// start termbox
 	tb_init();
@@ -164,38 +165,60 @@ int main(int argc, char** argv)
 	bool shutdown = false;
 	u8 auth_fails = 0;
 
+	bool cascadeUpdate = false;
+
 	switch_tty(&buf);
+
+	// fix cursor start position
+	draw_box(&buf);
+	position_input(&buf, &desktop, &login, &password);
+	error = tb_peek_event(&event, 1);
+	if (error < 0)
+	{
+	}
+
+	(*input_handles[active_input])(
+		input_structs[active_input],
+		&event);
 
 	// main loop
 	while (run)
 	{
-		if (update)
+		while (update || cascadeUpdate)
 		{
-			if (auth_fails < 10)
+			update = cascadeUpdate;
+			if (auth_fails < 1)
 			{
 				tb_clear();
-				animate(&buf);
+				// animate(&buf);
 				draw_box(&buf);
 				draw_labels(&buf);
 				draw_f_commands();
 				draw_lock_state(&buf);
 				position_input(&buf, &desktop, &login, &password);
-				draw_desktop(&desktop);
-				draw_input(&login);
+				// draw_desktop(&desktop);
+				// draw_input(&login);
 				draw_input_mask(&password);
 				update = config.animate;
 			}
 			else
 			{
-				usleep(10000);
-				update = cascade(&buf, &auth_fails);
+				tb_set_cursor(TB_HIDE_CURSOR, TB_HIDE_CURSOR);
+				usleep(30000);
+				cascadeUpdate = cascade(&buf, &auth_fails);
+				update = true;
+				if (!cascadeUpdate)
+				{
+					tb_set_cursor(
+						password.x + (password.cur - password.visible_start),
+						password.y);
+				}
 			}
 
 			tb_present();
 		}
 
-		error = tb_peek_event(&event, config.min_refresh_delta);
-
+		error = tb_poll_event(&event);
 		if (error < 0)
 		{
 			continue;
@@ -214,7 +237,7 @@ int main(int argc, char** argv)
 				run = false;
 				break;
 			case TB_KEY_CTRL_C:
-				run = false;
+				// run = false;
 				break;
 			case TB_KEY_CTRL_U:
 				if (active_input > 0)
@@ -223,20 +246,25 @@ int main(int argc, char** argv)
 				}
 				break;
 			case TB_KEY_ARROW_UP:
+				/*
 				if (active_input > 0)
 				{
 					--active_input;
 					update = true;
 				}
+				*/
 				break;
 			case TB_KEY_ARROW_DOWN:
+				/*
 				if (active_input < 2)
 				{
 					++active_input;
 					update = true;
 				}
+				*/
 				break;
 			case TB_KEY_TAB:
+				/*
 				++active_input;
 
 				if (active_input > 2)
@@ -244,6 +272,7 @@ int main(int argc, char** argv)
 					active_input = PASSWORD_INPUT;
 				}
 				update = true;
+				*/
 				break;
 			case TB_KEY_ENTER:
 				save(&desktop, &login);
@@ -264,6 +293,9 @@ int main(int argc, char** argv)
 					if (config.blank_password)
 					{
 						input_text_clear(&password);
+						tb_set_cursor(
+							password.x + (password.cur - password.visible_start),
+							password.y);
 					}
 
 					dgn_reset();
@@ -272,6 +304,19 @@ int main(int argc, char** argv)
 				{
 					buf.info_line = lang.logout;
 				}
+
+				tb_clear();
+				// animate(&buf);
+				draw_box(&buf);
+				draw_labels(&buf);
+				draw_f_commands();
+				draw_lock_state(&buf);
+				position_input(&buf, &desktop, &login, &password);
+				// draw_desktop(&desktop);
+				// draw_input(&login);
+				draw_input_mask(&password);
+
+				tb_present();
 
 				load(&desktop, &login);
 				system("tput cnorm");
@@ -293,7 +338,7 @@ int main(int argc, char** argv)
 	input_desktop_free(&desktop);
 	input_text_free(&login);
 	input_text_free(&password);
-	free_hostname();
+	// free_hostname();
 
 	// unload config
 	draw_free(&buf);

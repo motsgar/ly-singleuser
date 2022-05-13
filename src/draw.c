@@ -16,18 +16,19 @@
 #include <unistd.h>
 
 #if defined(__DragonFly__) || defined(__FreeBSD__)
-	#include <sys/kbio.h>
+#include <sys/kbio.h>
 #else // linux
-	#include <linux/kd.h>
+#include <linux/kd.h>
 #endif
 
 #define DOOM_STEPS 13
 
-void draw_init(struct term_buf* buf)
+void draw_init(struct term_buf *buf)
 {
 	buf->width = tb_width();
 	buf->height = tb_height();
-	hostname(&buf->info_line);
+	//hostname(&buf->info_line);
+	buf->info_line = "login";
 
 	u16 len_login = strlen(lang.login);
 	u16 len_password = strlen(lang.password);
@@ -41,11 +42,9 @@ void draw_init(struct term_buf* buf)
 		buf->labels_max_len = len_password;
 	}
 
-	buf->box_height = 7 + (2 * config.margin_box_v);
+	buf->box_height = 7 + (2 * config.margin_box_v) - 4;
 	buf->box_width =
-		(2 * config.margin_box_h)
-		+ (config.input_len + 1)
-		+ buf->labels_max_len;
+		(2 * config.margin_box_h) + (config.input_len + 1) + buf->labels_max_len;
 
 #if defined(__linux__)
 	buf->box_chars.left_up = 0x250c;
@@ -60,7 +59,7 @@ void draw_init(struct term_buf* buf)
 	buf->box_chars.left_up = '+';
 	buf->box_chars.left_down = '+';
 	buf->box_chars.right_up = '+';
-	buf->box_chars.right_down= '+';
+	buf->box_chars.right_down = '+';
 	buf->box_chars.top = '-';
 	buf->box_chars.bot = '-';
 	buf->box_chars.left = '|';
@@ -68,7 +67,7 @@ void draw_init(struct term_buf* buf)
 #endif
 }
 
-void draw_free(struct term_buf* buf)
+void draw_free(struct term_buf *buf)
 {
 	if (config.animate)
 	{
@@ -76,7 +75,7 @@ void draw_free(struct term_buf* buf)
 	}
 }
 
-void draw_box(struct term_buf* buf)
+void draw_box(struct term_buf *buf)
 {
 	u16 box_x = (buf->width - buf->box_width) / 2;
 	u16 box_y = (buf->height - buf->box_height) / 2;
@@ -164,10 +163,10 @@ void draw_box(struct term_buf* buf)
 	}
 }
 
-struct tb_cell* strn_cell(char* s, u16 len) // throws
+struct tb_cell *strn_cell(char *s, u16 len) // throws
 {
-	struct tb_cell* cells = malloc((sizeof (struct tb_cell)) * len);
-	char* s2 = s;
+	struct tb_cell *cells = malloc((sizeof(struct tb_cell)) * len);
+	char *s2 = s;
 	u32 c;
 
 	if (cells != NULL)
@@ -194,14 +193,15 @@ struct tb_cell* strn_cell(char* s, u16 len) // throws
 	return cells;
 }
 
-struct tb_cell* str_cell(char* s) // throws
+struct tb_cell *str_cell(char *s) // throws
 {
 	return strn_cell(s, strlen(s));
 }
 
-void draw_labels(struct term_buf* buf) // throws
+void draw_labels(struct term_buf *buf) // throws
 {
 	// login text
+	/*
 	struct tb_cell* login = str_cell(lang.login);
 
 	if (dgn_catch())
@@ -218,9 +218,9 @@ void draw_labels(struct term_buf* buf) // throws
 			login);
 		free(login);
 	}
-
+	*/
 	// password text
-	struct tb_cell* password = str_cell(lang.password);
+	struct tb_cell *password = str_cell(lang.password);
 
 	if (dgn_catch())
 	{
@@ -230,7 +230,7 @@ void draw_labels(struct term_buf* buf) // throws
 	{
 		tb_blit(
 			buf->box_x + config.margin_box_h,
-			buf->box_y + config.margin_box_v + 6,
+			buf->box_y + config.margin_box_v + 2,
 			strlen(lang.password),
 			1,
 			password);
@@ -240,7 +240,7 @@ void draw_labels(struct term_buf* buf) // throws
 	if (buf->info_line != NULL)
 	{
 		u16 len = strlen(buf->info_line);
-		struct tb_cell* info_cell = str_cell(buf->info_line);
+		struct tb_cell *info_cell = str_cell(buf->info_line);
 
 		if (dgn_catch())
 		{
@@ -261,7 +261,7 @@ void draw_labels(struct term_buf* buf) // throws
 
 void draw_f_commands()
 {
-	struct tb_cell* f1 = str_cell(lang.f1);
+	struct tb_cell *f1 = str_cell(lang.f1);
 
 	if (dgn_catch())
 	{
@@ -273,7 +273,7 @@ void draw_f_commands()
 		free(f1);
 	}
 
-	struct tb_cell* f2 = str_cell(lang.f2);
+	struct tb_cell *f2 = str_cell(lang.f2);
 
 	if (dgn_catch())
 	{
@@ -286,7 +286,7 @@ void draw_f_commands()
 	}
 }
 
-void draw_lock_state(struct term_buf* buf)
+void draw_lock_state(struct term_buf *buf)
 {
 	// get values
 	int fd = open(config.console_dev, O_RDONLY);
@@ -319,7 +319,7 @@ void draw_lock_state(struct term_buf* buf)
 
 	if (numlock_on)
 	{
-		struct tb_cell* numlock = str_cell(lang.numlock);
+		struct tb_cell *numlock = str_cell(lang.numlock);
 
 		if (dgn_catch())
 		{
@@ -336,7 +336,7 @@ void draw_lock_state(struct term_buf* buf)
 
 	if (capslock_on)
 	{
-		struct tb_cell* capslock = str_cell(lang.capslock);
+		struct tb_cell *capslock = str_cell(lang.capslock);
 
 		if (dgn_catch())
 		{
@@ -350,7 +350,7 @@ void draw_lock_state(struct term_buf* buf)
 	}
 }
 
-void draw_desktop(struct desktop* target)
+void draw_desktop(struct desktop *target)
 {
 	u16 len = strlen(target->list[target->cur]);
 
@@ -373,7 +373,7 @@ void draw_desktop(struct desktop* target)
 		config.fg,
 		config.bg);
 
-	for (u16 i = 0; i < len; ++ i)
+	for (u16 i = 0; i < len; ++i)
 	{
 		tb_change_cell(
 			target->x + i + 2,
@@ -384,7 +384,7 @@ void draw_desktop(struct desktop* target)
 	}
 }
 
-void draw_input(struct text* input)
+void draw_input(struct text *input)
 {
 	u16 len = strlen(input->text);
 	u16 visible_len = input->visible_len;
@@ -394,7 +394,7 @@ void draw_input(struct text* input)
 		len = visible_len;
 	}
 
-	struct tb_cell* cells = strn_cell(input->visible_start, len);
+	struct tb_cell *cells = strn_cell(input->visible_start, len);
 
 	if (dgn_catch())
 	{
@@ -417,7 +417,7 @@ void draw_input(struct text* input)
 	}
 }
 
-void draw_input_mask(struct text* input)
+void draw_input_mask(struct text *input)
 {
 	u16 len = strlen(input->text);
 	u16 visible_len = input->visible_len;
@@ -450,10 +450,10 @@ void draw_input_mask(struct text* input)
 }
 
 void position_input(
-	struct term_buf* buf,
-	struct desktop* desktop,
-	struct text* login,
-	struct text* password)
+	struct term_buf *buf,
+	struct desktop *desktop,
+	struct text *login,
+	struct text *password)
 {
 	u16 x = buf->box_x + config.margin_box_h + buf->labels_max_len + 1;
 	i32 len = buf->box_x + buf->box_width - config.margin_box_h - x;
@@ -472,11 +472,11 @@ void position_input(
 	login->visible_len = len;
 
 	password->x = x;
-	password->y = buf->box_y + config.margin_box_v + 6;
+	password->y = buf->box_y + config.margin_box_v + 2;
 	password->visible_len = len;
 }
 
-static void doom_init(struct term_buf* buf)
+static void doom_init(struct term_buf *buf)
 {
 	buf->init_width = buf->width;
 	buf->init_height = buf->height;
@@ -494,53 +494,53 @@ static void doom_init(struct term_buf* buf)
 	memset(buf->tmp_buf + tmp_len, DOOM_STEPS - 1, buf->width);
 }
 
-void animate_init(struct term_buf* buf)
+void animate_init(struct term_buf *buf)
 {
 	if (config.animate)
 	{
-		switch(config.animation)
+		switch (config.animation)
 		{
-			default:
-			{
-				doom_init(buf);
-				break;
-			}
+		default:
+		{
+			doom_init(buf);
+			break;
+		}
 		}
 	}
 }
 
-static void doom(struct term_buf* term_buf)
+static void doom(struct term_buf *term_buf)
 {
 	static struct tb_cell fire[DOOM_STEPS] =
-	{
-		{' ', 9, 0}, // default
-		{0x2591, 2, 0}, // red
-		{0x2592, 2, 0}, // red
-		{0x2593, 2, 0}, // red
-		{0x2588, 2, 0}, // red
-		{0x2591, 4, 2}, // yellow
-		{0x2592, 4, 2}, // yellow
-		{0x2593, 4, 2}, // yellow
-		{0x2588, 4, 2}, // yellow
-		{0x2591, 8, 4}, // white
-		{0x2592, 8, 4}, // white
-		{0x2593, 8, 4}, // white
-		{0x2588, 8, 4}, // white
-	};
+		{
+			{' ', 9, 0},	// default
+			{0x2591, 2, 0}, // red
+			{0x2592, 2, 0}, // red
+			{0x2593, 2, 0}, // red
+			{0x2588, 2, 0}, // red
+			{0x2591, 4, 2}, // yellow
+			{0x2592, 4, 2}, // yellow
+			{0x2593, 4, 2}, // yellow
+			{0x2588, 4, 2}, // yellow
+			{0x2591, 8, 4}, // white
+			{0x2592, 8, 4}, // white
+			{0x2593, 8, 4}, // white
+			{0x2588, 8, 4}, // white
+		};
 
 	u16 src;
 	u16 random;
 	u16 dst;
 
 	u16 w = term_buf->init_width;
-	u8* tmp = term_buf->tmp_buf;
+	u8 *tmp = term_buf->tmp_buf;
 
 	if ((term_buf->width != term_buf->init_width) || (term_buf->height != term_buf->init_height))
 	{
 		return;
 	}
 
-	struct tb_cell* buf = tb_cell_buffer();
+	struct tb_cell *buf = tb_cell_buffer();
 
 	for (u16 x = 0; x < w; ++x)
 	{
@@ -572,30 +572,30 @@ static void doom(struct term_buf* term_buf)
 	}
 }
 
-void animate(struct term_buf* buf)
+void animate(struct term_buf *buf)
 {
 	buf->width = tb_width();
 	buf->height = tb_height();
 
 	if (config.animate)
 	{
-		switch(config.animation)
+		switch (config.animation)
 		{
-			default:
-			{
-				doom(buf);
-				break;
-			}
+		default:
+		{
+			doom(buf);
+			break;
+		}
 		}
 	}
 }
 
-bool cascade(struct term_buf* term_buf, u8* fails)
+bool cascade(struct term_buf *term_buf, u8 *fails)
 {
 	u16 width = term_buf->width;
 	u16 height = term_buf->height;
 
-	struct tb_cell* buf = tb_cell_buffer();
+	struct tb_cell *buf = tb_cell_buffer();
 	bool changes = false;
 	char c_under;
 	char c;
@@ -606,14 +606,13 @@ bool cascade(struct term_buf* term_buf, u8* fails)
 		{
 			c = buf[i * width + k].ch;
 
-			if (isspace(c))
+			if (isspace(c) && c != 12) // 12 is a weird special character
 			{
 				continue;
 			}
 
 			c_under = buf[(i + 1) * width + k].ch;
-			
-			if (!isspace(c_under))
+			if (!isspace(c_under) || c_under == 12)
 			{
 				continue;
 			}
@@ -633,10 +632,10 @@ bool cascade(struct term_buf* term_buf, u8* fails)
 		}
 	}
 
-	// stop force-updating 
+	// stop force-updating
 	if (!changes)
 	{
-		sleep(7);
+		//sleep(7);
 		*fails = 0;
 
 		return false;

@@ -14,18 +14,18 @@
 #include <unistd.h>
 
 #if defined(__DragonFly__) || defined(__FreeBSD__)
-	#include <sys/consio.h>
+#include <sys/consio.h>
 #else // linux
-	#include <linux/vt.h>
+#include <linux/vt.h>
 #endif
 
 void desktop_crawl(
-	struct desktop* target,
-	char* sessions,
+	struct desktop *target,
+	char *sessions,
 	enum display_server server)
 {
-	DIR* dir;
-	struct dirent* dir_info;
+	DIR *dir;
+	struct dirent *dir_info;
 	int ok;
 
 	ok = access(sessions, F_OK);
@@ -44,25 +44,25 @@ void desktop_crawl(
 		return;
 	}
 
-	char* name = NULL;
-	char* exec = NULL;
+	char *name = NULL;
+	char *exec = NULL;
 
 	struct configator_param map_desktop[] =
-	{
-		{"Exec", &exec, config_handle_str},
-		{"Name", &name, config_handle_str},
-	};
+		{
+			{"Exec", &exec, config_handle_str},
+			{"Name", &name, config_handle_str},
+		};
 
-	struct configator_param* map[] =
-	{
-		NULL,
-		map_desktop,
-	};
+	struct configator_param *map[] =
+		{
+			NULL,
+			map_desktop,
+		};
 
-	struct configator_param sections[] =	
-	{
-		{"Desktop Entry", NULL, NULL},
-	};
+	struct configator_param sections[] =
+		{
+			{"Desktop Entry", NULL, NULL},
+		};
 
 	uint16_t map_len[] = {0, 2};
 	uint16_t sections_len = 1;
@@ -91,8 +91,8 @@ void desktop_crawl(
 			continue;
 		}
 
-		snprintf(path, (sizeof (path)) - 1, "%s/", sessions);
-		strncat(path, dir_info->d_name, (sizeof (path)) - 1);
+		snprintf(path, (sizeof(path)) - 1, "%s/", sessions);
+		strncat(path, dir_info->d_name, (sizeof(path)) - 1);
 		configator(&desktop_config, path);
 
 		// if these are wayland sessions, add " (Wayland)" to their names,
@@ -121,23 +121,23 @@ void desktop_crawl(
 	closedir(dir);
 }
 
-void desktop_load(struct desktop* target)
+void desktop_load(struct desktop *target)
 {
 	// we don't care about desktop environments presence
 	// because the fallback shell is always available
 	// so we just dismiss any "throw" for now
 	int err = 0;
 
-	desktop_crawl(target, config.waylandsessions, DS_WAYLAND);
+	//desktop_crawl(target, config.waylandsessions, DS_WAYLAND);
 
-	if (dgn_catch())
-	{
-		++err;
-		dgn_reset();
-	}
+	//if (dgn_catch())
+	//{
+	//	++err;
+	//	dgn_reset();
+	//}
 
 	desktop_crawl(target, config.xsessions, DS_XORG);
-
+	//++(target->cur);
 	if (dgn_catch())
 	{
 		++err;
@@ -145,9 +145,9 @@ void desktop_load(struct desktop* target)
 	}
 }
 
-static char* hostname_backup = NULL;
+static char *hostname_backup = NULL;
 
-void hostname(char** out)
+void hostname(char **out)
 {
 	if (hostname_backup != NULL)
 	{
@@ -185,9 +185,9 @@ void free_hostname()
 	free(hostname_backup);
 }
 
-void switch_tty(struct term_buf* buf)
+void switch_tty(struct term_buf *buf)
 {
-	FILE* console = fopen(config.console_dev, "w");
+	FILE *console = fopen(config.console_dev, "w");
 
 	if (console == NULL)
 	{
@@ -203,11 +203,11 @@ void switch_tty(struct term_buf* buf)
 	fclose(console);
 }
 
-void save(struct desktop* desktop, struct text* login)
+void save(struct desktop *desktop, struct text *login)
 {
 	if (config.save)
 	{
-		FILE* fp = fopen(config.save_file, "wb+");
+		FILE *fp = fopen(config.save_file, "wb+");
 
 		if (fp != NULL)
 		{
@@ -217,21 +217,21 @@ void save(struct desktop* desktop, struct text* login)
 	}
 }
 
-void load(struct desktop* desktop, struct text* login)
+void load(struct desktop *desktop, struct text *login)
 {
 	if (!config.load)
 	{
 		return;
 	}
 
-	FILE* fp = fopen(config.save_file, "rb");
+	FILE *fp = fopen(config.save_file, "rb");
 
 	if (fp == NULL)
 	{
 		return;
 	}
 
-	char* line = malloc(config.max_login_len + 1);
+	char *line = malloc(config.max_login_len + 1);
 
 	if (line == NULL)
 	{

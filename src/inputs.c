@@ -9,9 +9,9 @@
 #include <string.h>
 #include <sys/mman.h>
 
-void handle_desktop(void* input_struct, struct tb_event* event)
+void handle_desktop(void *input_struct, struct tb_event *event)
 {
-	struct desktop* target = (struct desktop*) input_struct;
+	struct desktop *target = (struct desktop *)input_struct;
 
 	if ((event != NULL) && (event->type == TB_EVENT_KEY))
 	{
@@ -28,9 +28,9 @@ void handle_desktop(void* input_struct, struct tb_event* event)
 	tb_set_cursor(target->x + 2, target->y);
 }
 
-void handle_text(void* input_struct, struct tb_event* event)
+void handle_text(void *input_struct, struct tb_event *event)
 {
-	struct text* target = (struct text*) input_struct;
+	struct text *target = (struct text *)input_struct;
 
 	if ((event != NULL) && (event->type == TB_EVENT_KEY))
 	{
@@ -46,13 +46,11 @@ void handle_text(void* input_struct, struct tb_event* event)
 		{
 			input_text_delete(target);
 		}
-		else if ((event->key == TB_KEY_BACKSPACE)
-			|| (event->key == TB_KEY_BACKSPACE2))
+		else if ((event->key == TB_KEY_BACKSPACE) || (event->key == TB_KEY_BACKSPACE2))
 		{
 			input_text_backspace(target);
 		}
-		else if (((event->ch > 31) && (event->ch < 127))
-			|| (event->key == TB_KEY_SPACE))
+		else if (((event->ch > 31) && (event->ch < 127)) || (event->key == TB_KEY_SPACE))
 		{
 			char buf[7] = {0};
 
@@ -74,7 +72,7 @@ void handle_text(void* input_struct, struct tb_event* event)
 		target->y);
 }
 
-void input_desktop(struct desktop* target)
+void input_desktop(struct desktop *target)
 {
 	target->list = NULL;
 	target->cmd = NULL;
@@ -89,7 +87,7 @@ void input_desktop(struct desktop* target)
 #endif
 }
 
-void input_text(struct text* target, u64 len)
+void input_text(struct text *target, u64 len)
 {
 	target->text = malloc(len + 1);
 
@@ -119,7 +117,7 @@ void input_text(struct text* target, u64 len)
 	target->y = 0;
 }
 
-void input_desktop_free(struct desktop* target)
+void input_desktop_free(struct desktop *target)
 {
 	if (target != NULL)
 	{
@@ -142,14 +140,14 @@ void input_desktop_free(struct desktop* target)
 	}
 }
 
-void input_text_free(struct text* target)
+void input_text_free(struct text *target)
 {
 	memset(target->text, 0, target->len);
 	munlock(target->text, target->len + 1);
 	free(target->text);
 }
 
-void input_desktop_right(struct desktop* target)
+void input_desktop_right(struct desktop *target)
 {
 	++(target->cur);
 
@@ -159,7 +157,7 @@ void input_desktop_right(struct desktop* target)
 	}
 }
 
-void input_desktop_left(struct desktop* target)
+void input_desktop_left(struct desktop *target)
 {
 	--(target->cur);
 
@@ -170,22 +168,20 @@ void input_desktop_left(struct desktop* target)
 }
 
 void input_desktop_add(
-	struct desktop* target,
-	char* name,
-	char* cmd,
+	struct desktop *target,
+	char *name,
+	char *cmd,
 	enum display_server display_server)
 {
 	++(target->len);
-	target->list = realloc(target->list, target->len * (sizeof (char*)));
-	target->cmd = realloc(target->cmd, target->len * (sizeof (char*)));
+	target->list = realloc(target->list, target->len * (sizeof(char *)));
+	target->cmd = realloc(target->cmd, target->len * (sizeof(char *)));
 	target->display_server = realloc(
 		target->display_server,
-		target->len * (sizeof (enum display_server)));
+		target->len * (sizeof(enum display_server)));
 	target->cur = target->len - 1;
 
-	if ((target->list == NULL)
-		|| (target->cmd == NULL)
-		|| (target->display_server == NULL))
+	if ((target->list == NULL) || (target->cmd == NULL) || (target->display_server == NULL))
 	{
 		dgn_throw(DGN_ALLOC);
 		return;
@@ -196,7 +192,7 @@ void input_desktop_add(
 	target->display_server[target->cur] = display_server;
 }
 
-void input_text_right(struct text* target)
+void input_text_right(struct text *target)
 {
 	if (target->cur < target->end)
 	{
@@ -209,7 +205,7 @@ void input_text_right(struct text* target)
 	}
 }
 
-void input_text_left(struct text* target)
+void input_text_left(struct text *target)
 {
 	if (target->cur > target->text)
 	{
@@ -222,7 +218,7 @@ void input_text_left(struct text* target)
 	}
 }
 
-void input_text_write(struct text* target, char ascii)
+void input_text_write(struct text *target, char ascii)
 {
 	if (ascii <= 0)
 	{
@@ -240,7 +236,7 @@ void input_text_write(struct text* target, char ascii)
 	}
 }
 
-void input_text_delete(struct text* target)
+void input_text_delete(struct text *target)
 {
 	if (target->cur < target->end)
 	{
@@ -250,7 +246,7 @@ void input_text_delete(struct text* target)
 	}
 }
 
-void input_text_backspace(struct text* target)
+void input_text_backspace(struct text *target)
 {
 	if (target->cur > target->text)
 	{
@@ -259,7 +255,7 @@ void input_text_backspace(struct text* target)
 	}
 }
 
-void input_text_clear(struct text* target)
+void input_text_clear(struct text *target)
 {
 	memset(target->text, 0, target->len + 1);
 	target->cur = target->text;
